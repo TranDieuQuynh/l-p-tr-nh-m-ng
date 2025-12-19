@@ -179,6 +179,30 @@
                     <property name="top_attach">0</property>
                   </packing>
                 </child>
+                <child>
+                  <object class="GtkButton" id="caro_invite_button">
+                    <property name="label" translatable="yes">Play Caro</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">4</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkComboBoxText" id="caro_size_combo">
+                    <items>
+                      <item id="3" translatable="yes">3x3</item>
+                      <item id="4" translatable="yes">4x4</item>
+                      <item id="5" translatable="yes">5x5</item>
+                      <item id="10" translatable="yes">10x10</item>
+                    </items>
+                    <property name="active">3</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">5</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
               </object>
               <packing>
                 <property name="expand">False</property>

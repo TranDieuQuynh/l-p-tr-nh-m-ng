@@ -41,7 +41,31 @@ typedef SSIZE_T ssize_t;
 #define LOG_ERROR(format, ...) fprintf(stderr, "[ERROR]: " format "\n", ##__VA_ARGS__)
 #define LOG_SUCCESS(format, ...) g_print("[SUCCESS]: " format "\n", ##__VA_ARGS__)
 
+#define CARO_BOARD_MAX 15
+
 int set_workdir_to_project_root(void);
+
+typedef struct CaroState{
+    GtkBuilder *builder;
+    GtkWidget *window;
+    GtkWidget *grid;
+    GtkWidget *scroller;
+    GtkWidget *status_label;
+    GtkWidget *opponent_label;
+    GtkWidget *turn_label;
+    GtkWidget *play_again_btn;
+    GtkWidget *cells[CARO_BOARD_MAX][CARO_BOARD_MAX];
+    char board[CARO_BOARD_MAX][CARO_BOARD_MAX];
+    int board_size;
+    int win_length;
+    char opponent[MAX_USERNAME_LEN];
+    gboolean in_game;
+    gboolean waiting_accept;
+    gboolean my_turn;
+    char my_symbol;
+    char opp_symbol;
+}CaroState;
+
 typedef struct clientDetails{
     int clientSocketFD;
     char *clientName;
@@ -51,6 +75,7 @@ typedef struct clientDetails{
     char active_target[CLIENT_NAME_INPUT_MAX];
     gboolean active_target_is_group;
     gboolean group_joined;
+    CaroState caro;
 }clientDetails;
 
 
@@ -171,6 +196,12 @@ void refresh_groups(GtkBuilder* builder, clientDetails *clientD, const char* csv
 void on_group_selected(GtkListBox *box, GtkListBoxRow *row, gpointer user_data);
 void on_group_create(GtkButton *button, gpointer user_data);
 void on_group_join(GtkButton *button, gpointer user_data);
+void caro_invite_button_handler(GtkWidget *button, SMData *pack);
+void caro_init_state(CaroState *state, GtkBuilder *builder);
+void caro_handle_invite(clientDetails *clientD, GtkBuilder *builder, const char *from, const char *payload);
+void caro_handle_accept(clientDetails *clientD, GtkBuilder *builder, const char *from, const char *payload);
+void caro_handle_move(clientDetails *clientD, GtkBuilder *builder, const char *from, const char *payload);
+void caro_handle_end(clientDetails *clientD, GtkBuilder *builder, const char *from, const char *payload);
 
 int send_framed_packet(int fd, const unsigned char *payload, size_t len);
 int recv_framed_packet(int fd, unsigned char **out, size_t *out_len);

@@ -262,6 +262,26 @@ void *handleNewlyAcceptedClient(void *param) {
                 }
             }
             broadcast_groups(serverD);
+        } else if (hdr_in.msgType == MSG_GAME_INVITE ||
+                   hdr_in.msgType == MSG_GAME_ACCEPT ||
+                   hdr_in.msgType == MSG_GAME_MOVE ||
+                   hdr_in.msgType == MSG_GAME_END) {
+            const char *target = hdr_in.topic;
+            if (target && strlen(target) > 0) {
+                int target_fd = lookup_fd_by_username(serverD, target);
+                if (target_fd != -1) {
+                    PacketHeader hdr_out = hdr_in;
+                    hdr_out.payloadLength = (uint32_t)payload_len;
+                    strncpy(hdr_out.sender, sender, MAX_USERNAME_LEN - 1);
+
+                    unsigned char *key = get_key_for_fd(serverD, target_fd);
+                    const unsigned char *buf = payload ? payload : (const unsigned char *)"";
+                    send_protocol_packet(target_fd, &hdr_out, buf, payload_len, key);
+                    delivered = 1;
+                } else {
+                    LOG_ERROR("[GAME] Target user %s not online", target);
+                }
+            }
         }
 
         free(payload);

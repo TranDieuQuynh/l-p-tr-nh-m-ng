@@ -33,6 +33,8 @@ int main(int argc, char **argv) {
     g_signal_connect(window, "destroy", gtk_main_quit, NULL);
     gtk_builder_connect_signals(builder, NULL);
     gtk_widget_show_all(window);
+
+    caro_init_state(&clientD.caro, builder);
     if (setupClientFromGUI(&clientD, builder) == -1) {
         LOG_ERROR("Client setup failed.");
         return EXIT_FAILURE;

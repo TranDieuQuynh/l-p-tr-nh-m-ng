@@ -48,6 +48,39 @@ static gboolean idle_refresh_groups_cb(gpointer data) {
     return FALSE;
 }
 
+typedef struct {
+    clientDetails *clientD;
+    GtkBuilder *builder;
+    char *from;
+    char *payload;
+    MessageType type;
+} UiGamePayload;
+
+static gboolean idle_game_dispatch_cb(gpointer data) {
+    UiGamePayload *p = (UiGamePayload *)data;
+    switch (p->type) {
+        case MSG_GAME_INVITE:
+            caro_handle_invite(p->clientD, p->builder, p->from, p->payload ? p->payload : "");
+            break;
+        case MSG_GAME_ACCEPT:
+            caro_handle_accept(p->clientD, p->builder, p->from, p->payload ? p->payload : "");
+            break;
+        case MSG_GAME_MOVE:
+            caro_handle_move(p->clientD, p->builder, p->from, p->payload ? p->payload : "");
+            break;
+        case MSG_GAME_END:
+            caro_handle_end(p->clientD, p->builder, p->from, p->payload ? p->payload : "");
+            break;
+        default:
+            break;
+    }
+    g_object_unref(p->builder);
+    if (p->from) free(p->from);
+    if (p->payload) free(p->payload);
+    free(p);
+    return FALSE;
+}
+
 int setupClientFromGUI(clientDetails *clientD, GtkBuilder* builder) {
     clientD->clientSocketFD = get_socket();
     if (clientD->clientSocketFD == -1) {
@@ -126,6 +159,7 @@ void *sendMessagesWithGUI(void *pack_ptr) {
     GtkWidget* group_button = GTK_WIDGET(gtk_builder_get_object(pack->builder, "group_create_button"));
     GtkWidget* group_join_button = GTK_WIDGET(gtk_builder_get_object(pack->builder, "group_join_button"));
     GtkWidget* group_list = GTK_WIDGET(gtk_builder_get_object(pack->builder, "group_list"));
+    GtkWidget* caro_invite_button = GTK_WIDGET(gtk_builder_get_object(pack->builder, "caro_invite_button"));
 
     SMHPack *smh_pack = malloc(sizeof(SMHPack));
     smh_pack->data = pack->data;
@@ -143,6 +177,9 @@ void *sendMessagesWithGUI(void *pack_ptr) {
     }
     if (group_list) {
         g_signal_connect(group_list, "row-selected", G_CALLBACK(on_group_selected), pack);
+    }
+    if (caro_invite_button) {
+        g_signal_connect(caro_invite_button, "clicked", G_CALLBACK(caro_invite_button_handler), pack);
     }
 
     return NULL;
@@ -524,6 +561,38 @@ void *receiveMessagesWithGUI(void *pack) {
                 p->csv = g_strdup((const char *)payload);
                 g_idle_add(idle_refresh_groups_cb, p);
             }
+        } else if (hdr.msgType == MSG_GAME_INVITE) {
+            UiGamePayload *p = malloc(sizeof(UiGamePayload));
+            p->clientD = clientD;
+            p->builder = g_object_ref(builder);
+            p->from = g_strdup(hdr.sender);
+            p->payload = g_strdup((const char *)payload);
+            p->type = hdr.msgType;
+            g_idle_add(idle_game_dispatch_cb, p);
+        } else if (hdr.msgType == MSG_GAME_ACCEPT) {
+            UiGamePayload *p = malloc(sizeof(UiGamePayload));
+            p->clientD = clientD;
+            p->builder = g_object_ref(builder);
+            p->from = g_strdup(hdr.sender);
+            p->payload = g_strdup((const char *)payload);
+            p->type = hdr.msgType;
+            g_idle_add(idle_game_dispatch_cb, p);
+        } else if (hdr.msgType == MSG_GAME_MOVE) {
+            UiGamePayload *p = malloc(sizeof(UiGamePayload));
+            p->clientD = clientD;
+            p->builder = g_object_ref(builder);
+            p->from = g_strdup(hdr.sender);
+            p->payload = g_strdup((const char *)payload);
+            p->type = hdr.msgType;
+            g_idle_add(idle_game_dispatch_cb, p);
+        } else if (hdr.msgType == MSG_GAME_END) {
+            UiGamePayload *p = malloc(sizeof(UiGamePayload));
+            p->clientD = clientD;
+            p->builder = g_object_ref(builder);
+            p->from = g_strdup(hdr.sender);
+            p->payload = g_strdup((const char *)payload);
+            p->type = hdr.msgType;
+            g_idle_add(idle_game_dispatch_cb, p);
         }
 
         free(payload);

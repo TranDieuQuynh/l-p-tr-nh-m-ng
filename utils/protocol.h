@@ -41,7 +41,11 @@ typedef enum {
     MSG_PUBLISH_FILE,
     MSG_FILE_DATA,
     MSG_ERROR,
-    MSG_ACK
+    MSG_ACK,
+    MSG_GAME_INVITE,
+    MSG_GAME_ACCEPT,
+    MSG_GAME_MOVE,
+    MSG_GAME_END
 } MessageType;
 
 #if defined(_MSC_VER)
