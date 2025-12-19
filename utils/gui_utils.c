@@ -417,11 +417,24 @@ void add_to_messages_interface(GtkBuilder* builder, const char* message, gboolea
         return;
     }
 
+    gtk_label_set_line_wrap(GTK_LABEL(message_label), TRUE);
+    gtk_label_set_xalign(GTK_LABEL(message_label), 0.0);
+    gtk_label_set_xalign(GTK_LABEL(username_label), 1.0);
+
+    time_t now = time(NULL);
+    struct tm *tm_info = localtime(&now);
+    char timebuf[16];
+    strftime(timebuf, sizeof(timebuf), "%H:%M", tm_info);
+    GtkWidget *timestamp_label = gtk_label_new(timebuf);
+    gtk_label_set_xalign(GTK_LABEL(timestamp_label), 1.0);
+    gtk_style_context_add_class(gtk_widget_get_style_context(timestamp_label), "bubble-timestamp");
+
     gtk_widget_set_halign(message_label, GTK_ALIGN_START);
     gtk_widget_set_halign(username_label, GTK_ALIGN_END);
 
     gtk_box_pack_start(GTK_BOX(message_node), message_label, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(message_node), username_label, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(message_node), timestamp_label, FALSE, FALSE, 0);
 
     if (open_path && strlen(open_path) > 0) {
         GtkWidget *open_btn = gtk_button_new_with_label("Open");
@@ -435,10 +448,21 @@ void add_to_messages_interface(GtkBuilder* builder, const char* message, gboolea
     if (is_sent) {
         gtk_widget_set_halign(message_node, GTK_ALIGN_END);
         gtk_widget_set_margin_start(message_node, 50);
+        gtk_style_context_add_class(gtk_widget_get_style_context(message_node), "bubble-sent");
     } else {
         gtk_widget_set_halign(message_node, GTK_ALIGN_START);
         gtk_widget_set_margin_end(message_node, 50);
+        gtk_style_context_add_class(gtk_widget_get_style_context(message_node), "bubble-recv");
     }
+
+    gtk_widget_set_margin_top(message_node, 6);
+    gtk_widget_set_margin_bottom(message_node, 6);
+    gtk_widget_set_margin_start(message_node, 8);
+    gtk_widget_set_margin_end(message_node, 8);
+
+    // give rows some breathing room
+    gtk_widget_set_margin_top(row, 4);
+    gtk_widget_set_margin_bottom(row, 4);
 
     gtk_container_add(GTK_CONTAINER(row), message_node);
     gtk_list_box_insert(GTK_LIST_BOX(messages_interface), row, -1);

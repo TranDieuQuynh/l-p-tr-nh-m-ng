@@ -150,6 +150,7 @@
               <object class="GtkGrid">
                 <property name="column_spacing">6</property>
                 <property name="row_spacing">6</property>
+                <property name="name">message_bar</property>
                 <property name="hexpand">True</property>
                 <child>
                   <object class="GtkEntry" id="message_entry">
@@ -164,7 +165,7 @@
                 </child>
                 <child>
                   <object class="GtkButton" id="send_file_button">
-                    <property name="label" translatable="yes">Send file</property>
+                    <property name="label" translatable="yes">📎 Send file</property>
                   </object>
                   <packing>
                     <property name="left_attach">2</property>
@@ -173,7 +174,7 @@
                 </child>
                 <child>
                   <object class="GtkButton" id="send_button">
-                    <property name="label" translatable="yes">Send</property>
+                    <property name="label" translatable="yes">🛫 Send</property>
                     <property name="receives_default">True</property>
                   </object>
                   <packing>
@@ -183,7 +184,7 @@
                 </child>
                 <child>
                   <object class="GtkButton" id="caro_invite_button">
-                    <property name="label" translatable="yes">Play Caro</property>
+                    <property name="label" translatable="yes">🎮 Play Caro</property>
                   </object>
                   <packing>
                     <property name="left_attach">4</property>
