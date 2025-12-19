@@ -5,6 +5,7 @@
     <property name="title" translatable="yes">CChatApp</property>
     <property name="default_width">960</property>
     <property name="default_height">640</property>
+    <property name="window_position">center</property>
     <child>
       <object class="GtkBox">
         <property name="orientation">horizontal</property>
@@ -13,20 +14,21 @@
           <object class="GtkFrame">
             <property name="width_request">220</property>
             <property name="label_xalign">0</property>
+        <child>
+          <object class="GtkBox">
+            <property name="orientation">vertical</property>
+            <property name="spacing">10</property>
+            <property name="margin_left">12</property>
+            <property name="margin_right">12</property>
+            <property name="margin_top">12</property>
+            <property name="margin_bottom">12</property>
             <child>
-              <object class="GtkBox">
-                <property name="orientation">vertical</property>
-                <property name="spacing">6</property>
-                <property name="margin_left">8</property>
-                <property name="margin_right">8</property>
-                <property name="margin_top">8</property>
-                <property name="margin_bottom">8</property>
-                <child>
-                  <object class="GtkLabel">
-                    <property name="label" translatable="yes">Online users</property>
-                    <property name="halign">start</property>
-                  </object>
-                </child>
+              <object class="GtkLabel">
+                <property name="label" translatable="yes">Online users</property>
+                <property name="halign">start</property>
+                <property name="margin_bottom">4</property>
+              </object>
+            </child>
                 <child>
                   <object class="GtkScrolledWindow">
                     <property name="hexpand">True</property>
@@ -94,14 +96,14 @@
         <child>
           <object class="GtkBox">
             <property name="orientation">vertical</property>
-            <property name="spacing">6</property>
-            <property name="margin_right">8</property>
-            <property name="margin_top">8</property>
-            <property name="margin_bottom">8</property>
+            <property name="spacing">10</property>
+            <property name="margin_right">12</property>
+            <property name="margin_top">12</property>
+            <property name="margin_bottom">12</property>
             <child>
               <object class="GtkBox">
                 <property name="orientation">horizontal</property>
-                <property name="spacing">6</property>
+                <property name="spacing">10</property>
                 <child>
                   <object class="GtkLabel" id="chat_header_label">
                     <property name="label" translatable="yes">Group chat</property>
@@ -197,6 +199,7 @@
                       <item id="10" translatable="yes">10x10</item>
                     </items>
                     <property name="active">3</property>
+                    <property name="width_request">90</property>
                   </object>
                   <packing>
                     <property name="left_attach">5</property>

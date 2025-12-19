@@ -18,6 +18,17 @@ int main(int argc, char **argv) {
 
     gtk_init(&argc, &argv);
 
+    GtkCssProvider *provider = gtk_css_provider_new();
+    if (!gtk_css_provider_load_from_path(provider, "gui/theme.css", NULL)) {
+        g_printerr("Failed to load GUI theme.\n");
+    } else {
+        GdkScreen *screen = gdk_screen_get_default();
+        gtk_style_context_add_provider_for_screen(screen,
+                                                  GTK_STYLE_PROVIDER(provider),
+                                                  GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    }
+    g_object_unref(provider);
+
     builder = gtk_builder_new();
     GError *error = NULL;
     if (gtk_builder_add_from_file(builder, UI_CONNECTION_PATH, &error) == 0) {

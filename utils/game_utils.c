@@ -15,6 +15,10 @@ static int caro_required_in_a_row(int size);
 static int caro_sanitize_size(int size);
 static int caro_parse_board_size(const char *payload);
 static void caro_play_again_clicked(GtkButton *button, gpointer user_data);
+static void caro_set_cell_symbol(GtkWidget *btn, char symbol);
+static void caro_clear_cell_style(GtkWidget *btn);
+static void caro_mark_win_line(CaroState *state, int start_r, int start_c, int dr, int dc, char symbol);
+static void caro_show_win_banner(CaroState *state, const char *text);
 
 static uint32_t next_game_msg_id(void) {
     static uint32_t counter = 50000;
@@ -50,6 +54,43 @@ static int caro_parse_board_size(const char *payload) {
     return size;
 }
 
+static void caro_clear_cell_style(GtkWidget *btn) {
+    if (!btn) return;
+    GtkStyleContext *ctx = gtk_widget_get_style_context(btn);
+    gtk_style_context_remove_class(ctx, "caro-x");
+    gtk_style_context_remove_class(ctx, "caro-o");
+    gtk_style_context_remove_class(ctx, "caro-win");
+}
+
+static void caro_set_cell_symbol(GtkWidget *btn, char symbol) {
+    if (!btn) return;
+    caro_clear_cell_style(btn);
+    gtk_button_set_label(GTK_BUTTON(btn), (const gchar[]){ symbol, '\0' });
+    GtkStyleContext *ctx = gtk_widget_get_style_context(btn);
+    if (symbol == 'X') gtk_style_context_add_class(ctx, "caro-x");
+    else if (symbol == 'O') gtk_style_context_add_class(ctx, "caro-o");
+}
+
+static void caro_mark_win_line(CaroState *state, int start_r, int start_c, int dr, int dc, char symbol) {
+    if (!state) return;
+    for (int i = 0; i < state->win_length; i++) {
+        int r = start_r + dr * i;
+        int c = start_c + dc * i;
+        if (r < 0 || c < 0 || r >= state->board_size || c >= state->board_size) break;
+        if (state->cells[r][c]) {
+            GtkStyleContext *ctx = gtk_widget_get_style_context(state->cells[r][c]);
+            gtk_style_context_add_class(ctx, "caro-win");
+            gtk_style_context_add_class(ctx, (symbol == 'X') ? "caro-x" : "caro-o");
+        }
+    }
+}
+
+static void caro_show_win_banner(CaroState *state, const char *text) {
+    if (!state || !state->win_label || !text) return;
+    gtk_label_set_text(GTK_LABEL(state->win_label), text);
+    gtk_widget_show(state->win_label);
+}
+
 static int caro_send_packet(clientDetails *clientD, MessageType type, const char *target, const char *payload) {
     if (!clientD || !clientD->aes_key || !target) return -1;
 
@@ -76,9 +117,13 @@ static void caro_reset_board(CaroState *state) {
         for (int c = 0; c < size; c++) {
             state->board[r][c] = '\0';
             if (state->cells[r][c]) {
+                caro_clear_cell_style(state->cells[r][c]);
                 gtk_button_set_label(GTK_BUTTON(state->cells[r][c]), " ");
             }
         }
+    }
+    if (state->win_label) {
+        gtk_widget_hide(state->win_label);
     }
 }
 
@@ -101,7 +146,7 @@ static gboolean caro_on_window_close(GtkWidget *widget, GdkEvent *event, gpointe
         if (strlen(state->opponent) > 0) {
             caro_send_packet(clientD, MSG_GAME_END, state->opponent, "RESIGN");
             char note[128];
-            snprintf(note, sizeof(note), "Bạn rời ván với %s.", state->opponent);
+            snprintf(note, sizeof(note), "You left the game with %s.", state->opponent);
             caro_push_system_message(state->builder, note, TRUE);
         }
     }
@@ -130,7 +175,7 @@ static void caro_cell_clicked(GtkButton *button, gpointer user_data) {
     }
 
     state->board[row][col] = state->my_symbol;
-    gtk_button_set_label(button, (const gchar[]){ state->my_symbol, '\0' });
+    caro_set_cell_symbol(GTK_WIDGET(button), state->my_symbol);
 
     gboolean win = caro_check_win(state, row, col, state->my_symbol);
     gboolean draw = (!win) && caro_board_full(state);
@@ -139,8 +184,10 @@ static void caro_cell_clicked(GtkButton *button, gpointer user_data) {
         char msg[64];
         snprintf(msg, sizeof(msg), "You won! %d in a row.", state->win_length);
         caro_finish_game(state, msg);
+        caro_show_win_banner(state, (state->my_symbol == 'X') ? "Player X Wins" : "Player O Wins");
     } else if (draw) {
         caro_finish_game(state, "Draw. Board is full.");
+        if (state->win_label) gtk_widget_hide(state->win_label);
     } else {
         state->my_turn = FALSE;
         caro_update_labels(state, NULL, "Waiting for opponent...");
@@ -170,6 +217,10 @@ static void caro_attach_grid(clientDetails *clientD) {
     GtkWidget *grid = gtk_grid_new();
     gtk_grid_set_row_spacing(GTK_GRID(grid), 2);
     gtk_grid_set_column_spacing(GTK_GRID(grid), 2);
+    gtk_widget_set_halign(grid, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign(grid, GTK_ALIGN_CENTER);
+    gtk_widget_set_hexpand(grid, TRUE);
+    gtk_widget_set_vexpand(grid, TRUE);
 
     for (int r = 0; r < size; r++) {
         for (int c = 0; c < size; c++) {
@@ -211,11 +262,29 @@ static void caro_ensure_window(clientDetails *clientD) {
 
     caro_attach_grid(clientD);
 
+    GtkWidget *overlay = gtk_overlay_new();
+    state->overlay = overlay;
+
     GtkWidget *scroller = gtk_scrolled_window_new(NULL, NULL);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroller), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+    gtk_widget_set_halign(scroller, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign(scroller, GTK_ALIGN_CENTER);
+    gtk_widget_set_hexpand(scroller, TRUE);
+    gtk_widget_set_vexpand(scroller, TRUE);
+    gtk_widget_set_size_request(scroller, 520, 520);
     state->scroller = scroller;
     gtk_container_add(GTK_CONTAINER(scroller), state->grid);
-    gtk_box_pack_start(GTK_BOX(root), scroller, TRUE, TRUE, 0);
+    gtk_container_add(GTK_CONTAINER(overlay), scroller);
+
+    GtkWidget *win_label = gtk_label_new(NULL);
+    gtk_widget_set_halign(win_label, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign(win_label, GTK_ALIGN_CENTER);
+    gtk_widget_set_no_show_all(win_label, TRUE);
+    gtk_style_context_add_class(gtk_widget_get_style_context(win_label), "caro-win-label");
+    state->win_label = win_label;
+    gtk_overlay_add_overlay(GTK_OVERLAY(overlay), win_label);
+
+    gtk_box_pack_start(GTK_BOX(root), overlay, TRUE, TRUE, 0);
 
     GtkWidget *controls = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
     GtkWidget *leave_btn = gtk_button_new_with_label("Leave game");
@@ -258,6 +327,7 @@ static void caro_start_match(clientDetails *clientD, const char *opponent, gbool
     caro_ensure_window(clientD);
     caro_attach_grid(clientD);
     caro_reset_board(state);
+    if (state->win_label) gtk_widget_hide(state->win_label);
 
     char opp_label[128];
     snprintf(opp_label, sizeof(opp_label), "Opponent: %s", opponent);
@@ -296,7 +366,18 @@ static gboolean caro_check_win(CaroState *state, int row, int col, char symbol) 
             if (state->board[r][c] == symbol) count++;
             else break;
         }
-        if (count >= need) return TRUE;
+        if (count >= need) {
+            int sr = row;
+            int sc = col;
+            while (sr - dirs[d][0] >= 0 && sc - dirs[d][1] >= 0 &&
+                   sr - dirs[d][0] < size && sc - dirs[d][1] < size &&
+                   state->board[sr - dirs[d][0]][sc - dirs[d][1]] == symbol) {
+                sr -= dirs[d][0];
+                sc -= dirs[d][1];
+            }
+            caro_mark_win_line(state, sr, sc, dirs[d][0], dirs[d][1], symbol);
+            return TRUE;
+        }
     }
     return FALSE;
 }
@@ -560,13 +641,14 @@ void caro_handle_move(clientDetails *clientD, GtkBuilder *builder, const char *f
 
     state->board[row][col] = state->opp_symbol;
     if (state->cells[row][col]) {
-        gtk_button_set_label(GTK_BUTTON(state->cells[row][col]), (const gchar[]){ state->opp_symbol, '\0' });
+        caro_set_cell_symbol(state->cells[row][col], state->opp_symbol);
     }
 
     if (caro_check_win(state, row, col, state->opp_symbol)) {
         char msg[128];
         snprintf(msg, sizeof(msg), "You lost. Opponent made %d in a row.", state->win_length);
         caro_finish_game(state, msg);
+        caro_show_win_banner(state, (state->opp_symbol == 'X') ? "Player X Wins" : "Player O Wins");
         return;
     }
     if (caro_board_full(state)) {
@@ -591,12 +673,16 @@ void caro_handle_end(clientDetails *clientD, GtkBuilder *builder, const char *fr
         snprintf(msg, sizeof(msg), "Opponent (%s) resigned. You win.", from);
         caro_finish_game(state, msg);
         caro_push_system_message(builder, msg, FALSE);
+        caro_show_win_banner(state, (state->my_symbol == 'X') ? "Player X Wins" : "Player O Wins");
     } else if (g_str_has_prefix(payload, "CANCEL")) {
         caro_finish_game(state, "Opponent cancelled the game.");
+        if (state->win_label) gtk_widget_hide(state->win_label);
     } else if (g_str_has_prefix(payload, "DRAW")) {
         caro_finish_game(state, "Game ended in a draw.");
+        if (state->win_label) gtk_widget_hide(state->win_label);
     } else {
         caro_finish_game(state, "Game ended.");
+        if (state->win_label) gtk_widget_hide(state->win_label);
     }
     if (state->play_again_btn) {
         gtk_widget_set_sensitive(state->play_again_btn, TRUE);

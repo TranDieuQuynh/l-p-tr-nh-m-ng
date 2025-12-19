@@ -1,0 +1,77 @@
+/* Pastel blue + white theme */
+
+@define-color primary_bg #f7fbff;
+@define-color accent_bg #d5e9ff;
+@define-color accent_border #94c5ff;
+@define-color text_color #0f2940;
+@define-color accent_text #0b5fa4;
+
+window, dialog, .background {
+    background: @primary_bg;
+    color: @text_color;
+}
+
+button {
+    background-image: none;
+    background-color: @accent_bg;
+    color: @accent_text;
+    border-radius: 8px;
+    border: 1px solid @accent_border;
+    padding: 8px 12px;
+}
+
+button:hover {
+    background-color: shade(@accent_bg, 1.05);
+}
+
+button.caro-x, .caro-x {
+    color: #1c8c3a;
+    font-weight: 700;
+}
+
+button.caro-o, .caro-o {
+    color: #e57c1f;
+    font-weight: 700;
+}
+
+.caro-win {
+    background-color: rgba(255, 213, 79, 0.35);
+    border: 1px solid #f4b400;
+}
+
+.caro-win-label {
+    font-size: 28px;
+    font-weight: 800;
+    color: #0b5fa4;
+    padding: 12px 18px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid #94c5ff;
+    border-radius: 12px;
+}
+
+entry {
+    background-color: #ffffff;
+    color: @text_color;
+    border-radius: 6px;
+    border: 1px solid @accent_border;
+    padding: 6px 8px;
+}
+
+label {
+    color: @text_color;
+}
+
+list, list row, list row label,
+.view, .list {
+    background-color: #ffffff;
+    color: @text_color;
+}
+
+scrollbar slider {
+    background-color: @accent_bg;
+    border-radius: 8px;
+}
+
+.header-bar {
+    background: @primary_bg;
+}

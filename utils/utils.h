@@ -54,6 +54,8 @@ typedef struct CaroState{
     GtkWidget *opponent_label;
     GtkWidget *turn_label;
     GtkWidget *play_again_btn;
+    GtkWidget *overlay;
+    GtkWidget *win_label;
     GtkWidget *cells[CARO_BOARD_MAX][CARO_BOARD_MAX];
     char board[CARO_BOARD_MAX][CARO_BOARD_MAX];
     int board_size;
